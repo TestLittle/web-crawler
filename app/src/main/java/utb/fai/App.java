@@ -5,52 +5,73 @@ package utb.fai;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import javax.swing.text.html.parser.ParserDelegator;
+//import javax.swing.text.html.parser.ParserDelegator;
 
 public class App {
 
 	public static void main(String[] args) {
 		LinkedList<URIinfo> foundURIs = new LinkedList<URIinfo>();
-		HashSet<URI> visitedURIs = new HashSet<URI>();
+		ConcurrentHashMap<Integer, URI> visitedURIs = new ConcurrentHashMap<Integer, URI>();
 		URI uri;
+		int depth;
 		try {
-			uri = new URI(args[0] + "/");
-			foundURIs.add(new URIinfo(uri, 0));
-			visitedURIs.add(uri);
-
 			if (args.length < 1) {
-				System.err.println("Missing parameter - start URL");
+				System.out.println("Missing parameters - start URL, depth");
+				return;
+			}else if(args.length == 1){
+				System.out.println("Missing parameter - depth");
 				return;
 			}
-			/**
-			 * Zde zpracujte dalí parametry - maxDepth a debugLevel
-			 */
+
+			uri = new URI(args[0] + "/");
+			depth = Integer.parseInt(args[1]);
+			foundURIs.add(new URIinfo(uri, 0));
+			visitedURIs.put(1, uri);
 
 			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs);
-			ParserDelegator parser = new ParserDelegator();
+			//ParserDelegator parser = new ParserDelegator();
 
 			while (!foundURIs.isEmpty()) {
 				URIinfo URIinfo = foundURIs.removeFirst();
 				callBack.depth = URIinfo.depth;
 				callBack.pageURI = uri = URIinfo.uri;
-				System.err.println("Analyzing " + uri);
-				try {
-					BufferedReader reader = new BufferedReader(new InputStreamReader(uri.toURL().openStream()));
-					parser.parse(reader, callBack, true);
-					reader.close();
-				} catch (FileNotFoundException e) {
-					System.err.println("Error loading page - does it exist?");
-				}
+				System.out.println("Analyzing " + uri);
+				ExecutorService pool = Executors.newFixedThreadPool(100);
+				do{
+
+				}while(!pool.isTerminated());
 			}
 		} catch (Exception e) {
-			System.err.println("Zachycena neoetøená výjimka, konèíme...");
+			System.out.println("Zachycena neosetrena vyjimka, koncime...");
 			e.printStackTrace();
 		}
 	}
 
 }
+/*
+public class InputHandler implements Runnable{
+
+	@Override
+	public void run() {
+		try {
+			//BufferedReader reader = new BufferedReader(new InputStreamReader(uri.toURL().openStream()));
+			//parser.parse(reader, callBack, true);
+			//callBack.handleText(uri);
+			//reader.close();
+		} catch (FileNotFoundException e) {
+			System.out.println("Error loading page - does it exist?");
+		} catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+*/

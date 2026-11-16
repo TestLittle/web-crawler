@@ -11,6 +11,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -87,7 +88,6 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
     }
 
     public void handleLinks(URI currentUrl, int currentDepth) {
-        //System.out.println("handleText: " + String.valueOf(data) + ", pos=" + pos);
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
@@ -97,7 +97,7 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                 .build();
 
         try{
-            String params = URLEncoder.encode("Type=A Type&Name=1100110&Char=!", "UTF-8");
+            String params = URLEncoder.encode("Type=A Type&Name=1100110&Char=!", StandardCharsets.UTF_8);
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.body() == null) {
@@ -112,7 +112,7 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                         System.out.println(link.text() + " > " + link.attr("href"));
                         String href = link.attr("href") + params;
                         URI uri = pageURI.resolve(href);
-                        foundURIs.add(new URIinfo(uri, currentDepth));
+                        foundURIs.add(new URIinfo(uri, currentDepth+1));
                     }
                 }
             }

@@ -97,7 +97,6 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                 .build();
 
         try{
-            String params = URLEncoder.encode("Type=A Type&Name=1100110&Char=!", StandardCharsets.UTF_8);
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.body() == null) {
@@ -108,9 +107,9 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                 Document doc = Jsoup.parse(response.body());
                 Elements links = doc.select("a");
                 for(Element link : links){
-                    if(link.hasAttr("href")){
+                    if(link.hasAttr("href") && link.attr("href").startsWith("https://")){
                         System.out.println(link.text() + " > " + link.attr("href"));
-                        String href = link.attr("href") + params;
+                        String href = link.attr("href").trim();
                         URI uri = pageURI.resolve(href);
                         foundURIs.add(new URIinfo(uri, currentDepth+1));
                     }

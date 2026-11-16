@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -60,61 +61,43 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
         this.visitedURIs = visitedURIs;
     }
 
-    /**
-     * metoda handleSimpleTag se volá např. u značky <FRAME>
-     */
-    public void handleSimpleTag(HTML.Tag t, MutableAttributeSet a, int pos) {
-        handleStartTag(t, a, pos);
-    }
+    public void handleText(URI currentUrl, int currentDepth){
+        HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
 
-    public void handleStartTag(HTML.Tag t, MutableAttributeSet a, int pos) {
-        URI uri;
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(currentUrl)
+                .build();
 
-        if (depth <= maxDepth){
-        }
-        /*
-            if (t == HTML.Tag.A)
-                href = (String) a.getAttribute(HTML.Attribute.HREF);
-            else if (t == HTML.Tag.FRAME)
-                href = (String) a.getAttribute(HTML.Attribute.SRC);
+        try{
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (href != null)
-            try {
-                uri = pageURI.resolve(href);
-                if (!uri.isOpaque() && !visitedURIs.contains(uri)) {
-                    visitedURIs.add(uri);
-                    foundURIs.add(new URIinfo(uri, depth + 1));
-                }
-            } catch (Exception e) {
-                System.err.println("Nalezeno nekorektní URI: " + href);
-                e.printStackTrace();
+            if (response.body() == null) {
+                return;
             }
-        */
+
+            if(response.statusCode() == 200){
+                Document doc = Jsoup.parse(response.body());
+                System.out.println(doc.body().text());
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    /******************************************************************
-     * V metodě handleText bude probíhat veškerá činnost, související se
-     * zjišťováním četnosti slov v textovém obsahu HTML stránek.
-     * IMPLEMENTACE TÉTO METODY JE V TÉTO ÚLOZE VAŠÍM ÚKOLEM !!!!
-     * Možžný postup:
-     * Ve třídě Parser (klidně v její metodě main) si vytvořte vyhledávací tabulku
-     * =instanci třídy HashMap<String,Integer> nebo TreeMap<String,Integer>.
-     * Do této tabulky si ukládejte dvojice klíč-data, kde
-     * klíčem jsou jednotlivá slova z textového obsahu HTML stránek,
-     * data typu Integer bude dosavadní počet výskytu daného slova v
-     * HTML stránkách.
-     *******************************************************************/
-    public void handleText(URI start_url) {
+    public void handleLinks(URI currentUrl, int currentDepth) {
         //System.out.println("handleText: " + String.valueOf(data) + ", pos=" + pos);
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(start_url)
+                .uri(currentUrl)
                 .build();
 
         try{
+            String params = URLEncoder.encode("Type=A Type&Name=1100110&Char=!", "UTF-8");
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.body() == null) {
@@ -127,6 +110,9 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                 for(Element link : links){
                     if(link.hasAttr("href")){
                         System.out.println(link.text() + " > " + link.attr("href"));
+                        String href = link.attr("href") + params;
+                        URI uri = pageURI.resolve(href);
+                        foundURIs.add(new URIinfo(uri, currentDepth));
                     }
                 }
             }

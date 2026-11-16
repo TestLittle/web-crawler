@@ -23,6 +23,7 @@ public class App {
 		ConcurrentHashMap<Integer, URI> visitedURIs = new ConcurrentHashMap<Integer, URI>();
 		URI uri;
 		int depth;
+		int currentDepth = 0;
 		try {
 			if (args.length < 1) {
 				System.out.println("Missing parameters - start URL, depth");
@@ -32,23 +33,27 @@ public class App {
 				return;
 			}
 
-			uri = new URI(args[0] + "/");
+			uri = new URI(args[0]);
 			depth = Integer.parseInt(args[1]);
 			foundURIs.add(new URIinfo(uri, 0));
 			visitedURIs.put(1, uri);
 
 			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs);
-			//ParserDelegator parser = new ParserDelegator();
 
-			while (!foundURIs.isEmpty()) {
+			while (!foundURIs.isEmpty() && currentDepth <= depth) {
 				URIinfo URIinfo = foundURIs.removeFirst();
 				callBack.depth = URIinfo.depth;
 				callBack.pageURI = uri = URIinfo.uri;
 				System.out.println("Analyzing " + uri);
-				ExecutorService pool = Executors.newFixedThreadPool(100);
+				/*ExecutorService pool = Executors.newFixedThreadPool(100);
 				do{
 
-				}while(!pool.isTerminated());
+				}while(!pool.isTerminated());*/
+				while(visitedURIs){
+					callBack.handleLinks(uri, currentDepth);
+					callBack.handleText(uri, currentDepth);
+				}
+				currentDepth++;
 			}
 		} catch (Exception e) {
 			System.out.println("Zachycena neosetrena vyjimka, koncime...");

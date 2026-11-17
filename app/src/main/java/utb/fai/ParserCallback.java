@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.jsoup.nodes.TextNode;
 
 import java.io.IOException;
 import java.net.URI;
@@ -18,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
+
+import java.util.List;
 
 /**
  * Třída ParserCallback je používána parserem DocumentParser,

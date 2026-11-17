@@ -101,7 +101,7 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                 Elements children = doc.body().children();
 
                 for(Element child : children){
-                    text.add(child.textNodes());
+                    text.addAll(child.textNodes());
                 }
                 for(TextNode node : text){
                     if(foundWords.containsKey(node.toString())){

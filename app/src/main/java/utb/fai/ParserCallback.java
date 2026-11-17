@@ -50,12 +50,16 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
      */
     ConcurrentHashMap<Integer, URI> visitedURIs;
 
+    ConcurrentHashMap<String, Integer> foundWords;
+
     /**
      * foundURLs jsou všechna nová (zatím nenavštívená) URL, která na stránce
      * najdeme. Poté, co projdeme celou stránku, budeme z tohoto seznamu
      * jednotlivá URL brát a zpracovávat.
      */
     LinkedList<URIinfo> foundURIs;
+
+    String encoding;
 
     ParserCallback(ConcurrentHashMap<Integer, URI> visitedURIs, LinkedList<URIinfo> foundURIs) {
         this.foundURIs = foundURIs;
@@ -80,7 +84,30 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
 
             if(response.statusCode() == 200){
                 Document doc = Jsoup.parse(response.body());
-                System.out.println(doc.body().text());
+
+                Elements meta = doc.select("meta");
+                for(Element header : meta){
+                    if(header.hasAttr("charset")){
+                        encoding = header.attr("charset");
+                    }
+                }
+                System.out.println(encoding);
+
+                List<TextNode> text = doc.body().textNodes();
+
+                Elements children = doc.body().children();
+
+                for(Element child : children){
+                    text.add(child.textNodes());
+                }
+                for(TextNode node : text){
+                    if(foundWords.containsKey(node.toString())){
+                        foundWords.compute(node.toString(), (key, value) -> value + 1);
+                    }else{
+                        foundWords.put(node.toString(), 1);
+                    }
+                }
+                //System.out.println(doc.body().text());
             }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -107,7 +134,7 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
                 Document doc = Jsoup.parse(response.body());
                 Elements links = doc.select("a");
                 for(Element link : links){
-                    if(link.hasAttr("href") && link.attr("href").startsWith("https://")){
+                    if(link.hasAttr("href") && link.attr("href").startsWith("http")){
                         System.out.println(link.text() + " > " + link.attr("href"));
                         String href = link.attr("href").trim();
                         URI uri = pageURI.resolve(href);

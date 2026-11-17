@@ -45,7 +45,8 @@ public class App {
 				System.out.println("\nAnalyzing " + uri);
 				/*ExecutorService pool = Executors.newFixedThreadPool(100);
 				do{
-
+					pool.execute(callBack.handlelinks);
+					pool.execute(callBack.handletext);
 				}while(!pool.isTerminated());
 				*/
 				callBack.handleLinks(uri, currentDepth);
@@ -61,6 +62,9 @@ public class App {
 					currentDepth++;
 				}
                 visitedUrl++;
+			}
+			for(String key : callBack.foundWords.keySet()){
+				System.out.println(callBack.foundWords.get(key) + "\n");
 			}
 		} catch (Exception e) {
 			System.out.println("Zachycena neosetrena vyjimka, koncime...");

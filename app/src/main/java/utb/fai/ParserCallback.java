@@ -16,10 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.swing.text.MutableAttributeSet;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLEditorKit;
-
 import java.util.List;
 
 /**
@@ -31,7 +27,7 @@ import java.util.List;
  * 
  * @author Tomá Dulík
  */
-class ParserCallback extends HTMLEditorKit.ParserCallback {
+class ParserCallback {
 
     /**
      * pageURI bude obsahovat URI aktuální parsované stránky. Budeme

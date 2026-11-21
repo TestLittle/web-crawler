@@ -3,16 +3,20 @@
  */
 package utb.fai;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class App {
 
 	public static void main(String[] args) {
 		LinkedList<URIinfo> foundURIs = new LinkedList<URIinfo>();
 		ConcurrentHashMap<Integer, URI> visitedURIs = new ConcurrentHashMap<Integer, URI>();
+		//ExecutorService pool = Executors.newFixedThreadPool(2);
 		URI uri;
 		int depth;
 		int currentDepth = 0;
@@ -40,17 +44,17 @@ public class App {
                 }
 
                 visitedURIs.put(visitedUrl, uri);
-				callBack.depth = URIinfo.depth;
+				callBack.maxDepth = URIinfo.depth;
+				callBack.depth = currentDepth;
 				callBack.pageURI = uri = URIinfo.uri;
 				System.out.println("\nAnalyzing " + uri);
-				/*ExecutorService pool = Executors.newFixedThreadPool(100);
-				do{
-					pool.execute(callBack.handlelinks);
-					pool.execute(callBack.handletext);
-				}while(!pool.isTerminated());
-				*/
-				callBack.handleLinks(uri, currentDepth);
-				callBack.handleText(uri, currentDepth);
+
+				//pool.execute(callBack.handleLinks);
+				//pool.execute(callBack.handleText);
+
+				callBack.handleLinks();
+				callBack.handleText();
+
 				boolean currDepthInFoundURI = false;
 				for(URIinfo foundURI : foundURIs){
 					if(foundURI.depth == currentDepth){
@@ -63,31 +67,35 @@ public class App {
 				}
                 visitedUrl++;
 			}
-			for(String key : callBack.foundWords.keySet()){
-				System.out.println(callBack.foundWords.get(key) + "\n");
+
+			ArrayList<Map.Entry<String, Integer>> sortedFoundWords = new ArrayList<>(callBack.foundWords.entrySet());
+			sortedFoundWords.sort((a,b) -> b.getValue().compareTo(a.getValue()));
+			int maxNumberOfWords = Math.min(20, sortedFoundWords.size());
+
+			for(int i = 0; i < maxNumberOfWords; i++){
+				Map.Entry<String, Integer> word = sortedFoundWords.get(i);
+				System.out.println(word.getKey() + ";" + word.getValue());
 			}
 		} catch (Exception e) {
 			System.out.println("Zachycena neosetrena vyjimka, koncime...");
 			e.printStackTrace();
-		}
+		}/*finally{
+			pool.shutdown();
+			try {
+				// Wait a while for existing tasks to terminate
+				if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+					pool.shutdownNow(); // Cancel currently executing tasks
+					// Wait a while for tasks to respond to being cancelled
+					if (!pool.awaitTermination(60, TimeUnit.SECONDS))
+						System.err.println("Pool did not terminate");
+				}
+			} catch (InterruptedException ie) {
+				// (Re-)Cancel if current thread also interrupted
+				pool.shutdownNow();
+				// Preserve interrupt status
+				Thread.currentThread().interrupt();
+			}
+		}*/
 	}
 
 }
-/*
-public class InputHandler implements Runnable{
-
-	@Override
-	public void run() {
-		try {
-			//BufferedReader reader = new BufferedReader(new InputStreamReader(uri.toURL().openStream()));
-			//parser.parse(reader, callBack, true);
-			//callBack.handleText(uri);
-			//reader.close();
-		} catch (FileNotFoundException e) {
-			System.out.println("Error loading page - does it exist?");
-		} catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-}
-*/

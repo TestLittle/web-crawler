@@ -1,5 +1,6 @@
 package utb.fai;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -52,38 +53,24 @@ class ParserCallback {
      */
     LinkedList<URIinfo> foundURIs;
 
-    HandleLinks handleLinks = new HandleLinks();
-    HandleText handleText = new HandleText();
+    HandleLinksAndText handleLinksAndText = new HandleLinksAndText();
 
     ParserCallback(ConcurrentHashMap<Integer, URI> visitedURIs, LinkedList<URIinfo> foundURIs) {
         this.foundURIs = foundURIs;
         this.visitedURIs = visitedURIs;
     }
 
-    class HandleText implements Runnable{
+    class HandleLinksAndText implements Runnable{
         public void run(){
             try{
-                Document doc = Jsoup.connect(pageURI.toString()).timeout(8000).get();
-                String text = doc.text();
-                Pattern splitSeparators = Pattern.compile("[^\\p{L}\\p{N}]+");
-
-                for(String word: splitSeparators.split(text)){
-                    if(word != null && !word.isEmpty()){
-                        String foundWord = word.toLowerCase();
-
-                        foundWords.merge(foundWord, 1, Integer::sum);
-                    }
+                Connection.Response response = Jsoup.connect(pageURI.toString()).ignoreHttpErrors(true).timeout(8000).execute();
+                
+                if(response.statusCode() < 200 || response.statusCode() >= 300){
+                    System.out.println("Preskakuji stranku, ke ktere nelze pristoupit.");
+                    return;
                 }
-            }catch(IOException e){
-
-            }
-        }
-    }
-
-    class HandleLinks implements Runnable{
-        public void run() {
-            try{               
-                Document doc = Jsoup.connect(pageURI.toString()).timeout(8000).get();
+                
+                Document doc = response.parse();
                 Elements links = doc.select("a");
                 for(Element link : links){
                     if(link.hasAttr("href")){
@@ -105,8 +92,19 @@ class ParserCallback {
                         }
                     }
                 }
-            }catch(IOException e){
 
+                String text = doc.text();
+                Pattern splitSeparators = Pattern.compile("[^\\p{L}\\p{N}]+");
+
+                for(String word: splitSeparators.split(text)){
+                    if(word != null && !word.isEmpty()){
+                        String foundWord = word.toLowerCase();
+
+                        foundWords.merge(foundWord, 1, Integer::sum);
+                    }
+                }
+            }catch(IOException e){
+                System.out.println("Stranka se nenacetla, preskakuji...");
             }
         }
     }

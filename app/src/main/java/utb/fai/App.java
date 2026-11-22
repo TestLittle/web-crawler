@@ -51,8 +51,7 @@ public class App {
 				
 				System.out.println("\nAnalyzing " + uri);
 
-				pool.submit(callBack.handleLinks).get();
-				pool.submit(callBack.handleText).get();
+				pool.submit(callBack.handleLinksAndText).get();
 
 				boolean currDepthInFoundURI = false;
 				for(URIinfo foundURI : foundURIs){

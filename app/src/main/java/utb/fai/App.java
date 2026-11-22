@@ -49,7 +49,8 @@ public class App {
 
 				visitedURIs.put(visitedUrl, uri);
 				
-				System.out.println("\nAnalyzing " + uri);
+				System.out.println("\nCurrent depth: " + currentDepth);
+				System.out.println("Analyzing " + uri);
 
 				pool.submit(callBack.handleLinksAndText).get();
 

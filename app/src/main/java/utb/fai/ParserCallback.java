@@ -7,9 +7,6 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -55,85 +52,62 @@ class ParserCallback {
      */
     LinkedList<URIinfo> foundURIs;
 
-    //HandleLinks handleLinks = new HandleLinks();
-    //HandleText handleText = new HandleText();
+    HandleLinks handleLinks = new HandleLinks();
+    HandleText handleText = new HandleText();
 
     ParserCallback(ConcurrentHashMap<Integer, URI> visitedURIs, LinkedList<URIinfo> foundURIs) {
         this.foundURIs = foundURIs;
         this.visitedURIs = visitedURIs;
     }
 
-    /*class HandleText implements Runnable{
-        public void run(){*/
-        public void handleLinks(){
-            HttpClient client = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.NORMAL)
-                    .build();
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(pageURI)
-                    .build();
-
+    class HandleText implements Runnable{
+        public void run(){
             try{
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                Document doc = Jsoup.connect(pageURI.toString()).timeout(8000).get();
+                String text = doc.text();
+                Pattern splitSeparators = Pattern.compile("[^\\p{L}\\p{N}]+");
 
-                if (response.body() == null) {
-                    return;
-                }
+                for(String word: splitSeparators.split(text)){
+                    if(word != null && !word.isEmpty()){
+                        String foundWord = word.toLowerCase();
 
-                if(response.statusCode() == 200){
-                    Document doc = Jsoup.parse(response.body());
-
-                    String text = doc.body().text();
-                    Pattern splitSeparators = Pattern.compile("[^\\p{L}\\p{N}]+");
-
-                    for(String word: splitSeparators.split(text)){
-                        if(word != null && !word.isEmpty()){
-                            String foundWord = word.toLowerCase();
-
-                            foundWords.merge(foundWord, 1, Integer::sum);
-                        }
+                        foundWords.merge(foundWord, 1, Integer::sum);
                     }
                 }
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
+            }catch(IOException e){
+
             }
         }
-    //}
+    }
 
-    /*class HandleLinks implements Runnable{
-        public void run() {*/
-        public void handleText(){
-            HttpClient client = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.NORMAL)
-                    .build();
+    class HandleLinks implements Runnable{
+        public void run() {
+            try{               
+                Document doc = Jsoup.connect(pageURI.toString()).timeout(8000).get();
+                Elements links = doc.select("a");
+                for(Element link : links){
+                    if(link.hasAttr("href")){
+                        String href = link.attr("href").trim();
+                        //System.out.println(link.text() + " > " + href);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(pageURI)
-                    .build();
+                        if(href.isEmpty()){
+                            continue;
+                        }
 
-            try{
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.body() == null) {
-                    return;
-                }
-
-                if(response.statusCode() == 200){
-                    Document doc = Jsoup.parse(response.body());
-                    Elements links = doc.select("a");
-                    for(Element link : links){
-                        if(link.hasAttr("href") && link.attr("href").startsWith("http")){
-                            //System.out.println(link.text() + " > " + link.attr("href"));
-                            String href = link.attr("href").trim();
+                        try{
                             URI uri = pageURI.resolve(href);
-                            foundURIs.add(new URIinfo(uri, depth+1));
+
+                            if("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())){
+                                foundURIs.add(new URIinfo(uri, depth+1));
+                            }
+                        }catch(IllegalArgumentException e){
+                            System.out.println("Preskakuji nevalidni link...");
                         }
                     }
                 }
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
+            }catch(IOException e){
+
             }
         }
-    //}
+    }
 }

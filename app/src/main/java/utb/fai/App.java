@@ -16,7 +16,7 @@ public class App {
 	public static void main(String[] args) {
 		LinkedList<URIinfo> foundURIs = new LinkedList<URIinfo>();
 		ConcurrentHashMap<Integer, URI> visitedURIs = new ConcurrentHashMap<Integer, URI>();
-		//ExecutorService pool = Executors.newFixedThreadPool(2);
+		ExecutorService pool = Executors.newFixedThreadPool(2);
 		URI uri;
 		int depth;
 		int currentDepth = 0;
@@ -43,17 +43,16 @@ public class App {
                     continue;
                 }
 
-                visitedURIs.put(visitedUrl, uri);
 				callBack.maxDepth = URIinfo.depth;
 				callBack.depth = currentDepth;
 				callBack.pageURI = uri = URIinfo.uri;
+
+				visitedURIs.put(visitedUrl, uri);
+				
 				System.out.println("\nAnalyzing " + uri);
 
-				//pool.execute(callBack.handleLinks);
-				//pool.execute(callBack.handleText);
-
-				callBack.handleLinks();
-				callBack.handleText();
+				pool.submit(callBack.handleLinks).get();
+				pool.submit(callBack.handleText).get();
 
 				boolean currDepthInFoundURI = false;
 				for(URIinfo foundURI : foundURIs){
@@ -79,7 +78,7 @@ public class App {
 		} catch (Exception e) {
 			System.out.println("Zachycena neosetrena vyjimka, koncime...");
 			e.printStackTrace();
-		}/*finally{
+		}finally{
 			pool.shutdown();
 			try {
 				// Wait a while for existing tasks to terminate
@@ -95,7 +94,7 @@ public class App {
 				// Preserve interrupt status
 				Thread.currentThread().interrupt();
 			}
-		}*/
+		}
 	}
 
 }

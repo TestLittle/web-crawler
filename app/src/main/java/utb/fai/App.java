@@ -25,13 +25,14 @@ public class App {
 			if (args.length < 1) {
 				System.out.println("Missing parameters - start URL, depth");
 				return;
-			}else if(args.length == 1){
-				System.out.println("Missing parameter - depth");
-				return;
 			}
 
 			uri = new URI(args[0]);
-			depth = Integer.parseInt(args[1]);
+			if(args.length == 1){
+				depth = 2;
+			}else{
+				depth = Integer.parseInt(args[1]);
+			}
 			foundURIs.add(new URIinfo(uri, 0));
 
 			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs);
